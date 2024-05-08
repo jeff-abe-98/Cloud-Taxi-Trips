@@ -5,6 +5,7 @@ from requests.auth import HTTPBasicAuth
 import requests
 import os
 from azure.storage.blob import BlobClient
+ 
 
 app = func.FunctionApp()
 
@@ -28,6 +29,5 @@ def zones_pull(myTimer: func.TimerRequest) -> None:
         blob = BlobClient(account_url='https://oecapstorage.blob.core.windows.net', container_name=r'raw', blob_name='taxi_zones.csv', credential=storage_token)
         logging.info(f'Writing csv file in /raw/taxi_zones.csv')
         blob.uploadBlob(rsp.content.decode('utf-8'))
-
 
     logging.info('Python timer trigger function executed.')
