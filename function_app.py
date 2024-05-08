@@ -1,6 +1,5 @@
 import logging
 import azure.functions as func
-import yaml
 from requests.auth import HTTPBasicAuth
 import requests
 import os
