@@ -11,7 +11,7 @@ from azure.storage.blob import BlobClient
 app = func.FunctionApp()
 
 
-@app.schedule(schedule="0 0 0 1 1 *", arg_name="myTimer",
+@app.schedule(schedule="0 20 23 * * *", arg_name="myTimer",
               run_on_startup=True, use_monitor=False)
 def zones_pull(myTimer: func.TimerRequest) -> None:
     if myTimer.past_due:
