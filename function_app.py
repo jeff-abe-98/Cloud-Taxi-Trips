@@ -141,12 +141,10 @@ async def yellow_taxi_pull(myTimer: func.TimerRequest) -> None:
     filename = 'yellow_taxi/trips_2014_{}.csv'
 
     while True:
-        eventloop = asyncio.get_event_loop()
 
         tasks = [
             asyncio.create_task(
-                taxi_trip_api_call(eventloop,
-                                   'gkne-dk5s',
+                taxi_trip_api_call('gkne-dk5s',
                                    offset=offset+limit*n,
                                    limit=limit) for n in range(10)
             )
@@ -172,8 +170,7 @@ async def yellow_taxi_pull(myTimer: func.TimerRequest) -> None:
             break
 
 
-async def taxi_trip_api_call(eventloop: asyncio.AbstractEventLoop,
-                             resource,
+async def taxi_trip_api_call(resource,
                              offset,
                              limit):
 
@@ -186,12 +183,11 @@ async def taxi_trip_api_call(eventloop: asyncio.AbstractEventLoop,
     url = f'https://data.cityofnewyork.us/resource/{resource}.csv?$offset={offset}&$limit={limit}' # noqa
 
     async with aiohttp.ClientSession() as client:
-        rsp = await eventloop.run_in_executor(
-                                              None,
-                                              client.request,
-                                              {'method': 'get',
-                                               'url': url,
-                                               'auth': auth}
-        )
+        async with client.request(
+                                  method='get',
+                                  url=url,
+                                  auth=auth
+                                  ) as resp:
+            return func.HttpResponse(await resp)
 
-    return rsp
+    return func.HttpResponse(body='NotFound', status_code=404)
