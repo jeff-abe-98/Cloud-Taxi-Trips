@@ -106,7 +106,7 @@ def green_taxi_pull(myTimer: func.TimerRequest) -> None:
                                               limit=limit),
                                auth=auth)
         n += 1
-        resultset = [*rsp.result().iter_lines()]
+        resultset = [*rsp.iter_lines()]
         if not rsp.ok or len(resultset) <= 1:
             break
 
@@ -147,7 +147,7 @@ def yellow_taxi_pull(myTimer: func.TimerRequest) -> None:
                                               limit=limit),
                                auth=auth)
         n += 1
-        resultset = [*rsp.result().iter_lines()]
+        resultset = [*rsp.iter_lines()]
         if not rsp.ok or len(resultset) <= 1:
             break
 
