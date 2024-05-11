@@ -168,7 +168,7 @@ async def yellow_taxi_pull(myTimer: func.TimerRequest) -> None:
         last_res = finished[-1]
 
         if len([*last_res.result().iter_lines()]) <= 1:
-            logging.info(f'Process finished, {i} files written to blob storage')
+            logging.info(f'Process finished, {i} files written to blob storage') # noqa
             break
 
 
