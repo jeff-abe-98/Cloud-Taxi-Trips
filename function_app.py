@@ -111,7 +111,7 @@ def green_taxi_pull(myTimer: func.TimerRequest) -> None:
             break
 
         location = 'https://oecapstorage.blob.core.windows.net'
-        filename = f'/green_taxi/trips_2014_{n}.csv'
+        filename = f'green_taxi/trips_2014_{n}.csv'
         blob = BlobClient(account_url=location,
                           container_name=r'raw',
                           blob_name=filename,
@@ -152,7 +152,7 @@ def yellow_taxi_pull(myTimer: func.TimerRequest) -> None:
             break
 
         location = 'https://oecapstorage.blob.core.windows.net'
-        filename = f'/yellow_taxi/trips_2014_{n}.csv'
+        filename = f'yellow_taxi/trips_2014_{n}.csv'
         blob = BlobClient(account_url=location,
                           container_name=r'raw',
                           blob_name=filename,
