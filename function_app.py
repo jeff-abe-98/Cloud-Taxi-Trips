@@ -158,7 +158,8 @@ async def yellow_taxi_pull(myTimer: func.TimerRequest) -> None:
                               container_name=r'raw',
                               blob_name=filename,
                               credential=storage_token)
-            blob.upload_blob(res.result().content.decode('utf-8'), overwrite=True)
+            blob.upload_blob(res.result().content.decode('utf-8'),
+                             overwrite=True)
             i += 1
 
         last_res = finished[-1]
