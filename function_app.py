@@ -3,7 +3,6 @@ import azure.functions as func
 from requests.auth import HTTPBasicAuth
 import requests
 import os
-import concurrent.futures
 from io import BytesIO
 from stream_unzip import stream_unzip
 from azure.storage.blob import BlobClient
