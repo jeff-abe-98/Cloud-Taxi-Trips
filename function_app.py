@@ -3,6 +3,7 @@ import azure.functions as func
 from requests.auth import HTTPBasicAuth
 import requests
 import os
+import concurrent.futures
 from io import BytesIO
 from stream_unzip import stream_unzip
 from azure.storage.blob import BlobClient
@@ -12,7 +13,7 @@ app = func.FunctionApp()
 
 
 @app.schedule(schedule="0 0 0 1 * *", arg_name="myTimer",
-              run_on_startup=True, use_monitor=False)
+              run_on_startup=False, use_monitor=False)
 def zones_pull(myTimer: func.TimerRequest) -> None:
     if myTimer.past_due:
         logging.info('Starting timer triggered function')
@@ -39,7 +40,7 @@ def zones_pull(myTimer: func.TimerRequest) -> None:
 
 
 @app.schedule(schedule="0 0 0 1 1 *", arg_name="myTimer",
-              run_on_startup=True, use_monitor=False)
+              run_on_startup=False, use_monitor=False)
 def bike_pull(myTimer: func.TimerRequest) -> None:
     if myTimer.past_due:
         logging.info('Process Started')
@@ -68,7 +69,7 @@ def bike_pull(myTimer: func.TimerRequest) -> None:
                 logging.info(f'Beginning extraction of {str_file}')
             with BytesIO() as file:
                 for chunk in chunk:
-                    file.write(chunk.decode())
+                    file.write(chunk)
                 file.seek(0)
                 location = 'https://oecapstorage.blob.core.windows.net'
                 blob = BlobClient(account_url=location,
@@ -79,3 +80,85 @@ def bike_pull(myTimer: func.TimerRequest) -> None:
                 blob.upload_blob(file.getvalue(), overwrite=True)
 
     logging.info('Python timer trigger function executed.')
+
+
+@app.schedule(schedule="0 0 0 1 1 *", arg_name="myTimer",
+              run_on_startup=False, use_monitor=False)
+def green_taxi_pull(myTimer: func.TimerRequest) -> None:
+    if myTimer.past_due:
+        logging.info('Process Started')
+    logging.info('Grabbing secrets')
+
+    api_key = os.environ['api_key_id']
+    api_secret = os.environ['api_key_secret']
+    storage_token = os.environ['blob_storage_token']
+
+    base_url = 'https://data.cityofnewyork.us/resource/2np7-5jsg.csv'
+
+    auth = HTTPBasicAuth(api_key, api_secret)
+
+    offset = 0
+    limit = 5000
+    url = base_url+'?$offset={offset}&$limit={limit}'
+    n = 0
+    while True:
+        rsp = requests.request(method='get',
+                               url=url.format(offset=offset+limit*n,
+                                              limit=limit),
+                               auth=auth)
+        n += 1
+        resultset = [*rsp.result().iter_lines()]
+        if not rsp.ok or len(resultset) <= 1:
+            break
+
+        location = 'https://oecapstorage.blob.core.windows.net'
+        filename = f'/green_taxi/trips_2014_{n}.csv'
+        blob = BlobClient(account_url=location,
+                          container_name=r'raw',
+                          blob_name=filename,
+                          credential=storage_token)
+        logging.info(f'Writing csv file in /raw/{filename}')
+        blob.upload_blob(rsp.content.decode('utf-8'), overwrite=True)
+
+    logging.info('Starting process')
+
+
+@app.schedule(schedule="0 0 0 1 1 *", arg_name="myTimer",
+              run_on_startup=False, use_monitor=False)
+def yellow_taxi_pull(myTimer: func.TimerRequest) -> None:
+    if myTimer.past_due:
+        logging.info('Process Started')
+    logging.info('Grabbing secrets')
+
+    api_key = os.environ['api_key_id']
+    api_secret = os.environ['api_key_secret']
+    storage_token = os.environ['blob_storage_token']
+
+    base_url = 'https://data.cityofnewyork.us/resource/gkne-dk5s.csv'
+
+    auth = HTTPBasicAuth(api_key, api_secret)
+
+    offset = 0
+    limit = 5000
+    url = base_url+'?$offset={offset}&$limit={limit}'
+    n = 0
+    while True:
+        rsp = requests.request(method='get',
+                               url=url.format(offset=offset+limit*n,
+                                              limit=limit),
+                               auth=auth)
+        n += 1
+        resultset = [*rsp.result().iter_lines()]
+        if not rsp.ok or len(resultset) <= 1:
+            break
+
+        location = 'https://oecapstorage.blob.core.windows.net'
+        filename = f'/yellow_taxi/trips_2014_{n}.csv'
+        blob = BlobClient(account_url=location,
+                          container_name=r'raw',
+                          blob_name=filename,
+                          credential=storage_token)
+        logging.info(f'Writing csv file in /raw/{filename}')
+        blob.upload_blob(rsp.content.decode('utf-8'), overwrite=True)
+
+    logging.info('Starting process')
