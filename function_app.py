@@ -82,7 +82,7 @@ def bike_pull(myTimer: func.TimerRequest) -> None:
 
 
 @app.schedule(schedule="0 0 0 1 1 *", arg_name="myTimer",
-              run_on_startup=False, use_monitor=False)
+              run_on_startup=True, use_monitor=False)
 def green_taxi_pull(myTimer: func.TimerRequest) -> None:
     if myTimer.past_due:
         logging.info('Process Started')
@@ -97,7 +97,7 @@ def green_taxi_pull(myTimer: func.TimerRequest) -> None:
     auth = HTTPBasicAuth(api_key, api_secret)
 
     offset = 0
-    limit = 5000
+    limit = 50000
     url = base_url+'?$offset={offset}&$limit={limit}'
     n = 0
     while True:
@@ -123,7 +123,7 @@ def green_taxi_pull(myTimer: func.TimerRequest) -> None:
 
 
 @app.schedule(schedule="0 0 0 1 1 *", arg_name="myTimer",
-              run_on_startup=True, use_monitor=False)
+              run_on_startup=False, use_monitor=False)
 def yellow_taxi_pull(myTimer: func.TimerRequest) -> None:
     if myTimer.past_due:
         logging.info('Process Started')
@@ -138,7 +138,7 @@ def yellow_taxi_pull(myTimer: func.TimerRequest) -> None:
     auth = HTTPBasicAuth(api_key, api_secret)
 
     offset = 0
-    limit = 5000
+    limit = 50000
     url = base_url+'?$offset={offset}&$limit={limit}'
     n = 0
     while True:
