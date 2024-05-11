@@ -123,7 +123,7 @@ def green_taxi_pull(myTimer: func.TimerRequest) -> None:
 
 
 @app.schedule(schedule="0 0 0 1 1 *", arg_name="myTimer",
-              run_on_startup=False, use_monitor=False)
+              run_on_startup=True, use_monitor=False)
 def yellow_taxi_pull(myTimer: func.TimerRequest) -> None:
     if myTimer.past_due:
         logging.info('Process Started')
