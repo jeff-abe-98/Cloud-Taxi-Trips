@@ -141,19 +141,17 @@ async def yellow_taxi_pull(myTimer: func.TimerRequest) -> None:
     filename = 'yellow_taxi/trips_2014_{}.csv'
 
     while True:
+        loop = asyncio.get_event_loop()
 
-        pending = [
-            asyncio.create_task(
+        tasks = [
                 taxi_trip_api_call('gkne-dk5s',
                                    offset=offset+limit*n,
-                                   limit=limit) for n in range(10)
-            )
+                                   limit=limit) for n in range(0, 10)
         ]
         offset += limit*10
-
-        while pending:
-            finished, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
-            res = finished.pop()
+        finished, pending = loop.run_until_complete(asyncio.wait(tasks,
+                                                   return_when=asyncio.FIRST_COMPLETED))
+        for res in finished:
             logging.info(f'Writing csv file in /raw/{filename.format(i)}')
             blob = BlobClient(account_url=location,
                               container_name=r'raw',
