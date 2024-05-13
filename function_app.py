@@ -149,8 +149,8 @@ async def yellow_taxi_pull(myTimer: func.TimerRequest) -> None:
                                    limit=limit) for n in range(0, 10)
         ]
         offset += limit*10
-        finished, pending = loop.run_until_complete(asyncio.wait(tasks,
-                                                   return_when=asyncio.FIRST_COMPLETED))
+        finished, _ = loop.run_until_complete(asyncio.wait(tasks,
+                                                   return_when=asyncio.FIRST_COMPLETED)) # noqa
         for res in finished:
             logging.info(f'Writing csv file in /raw/{filename.format(i)}')
             blob = BlobClient(account_url=location,
