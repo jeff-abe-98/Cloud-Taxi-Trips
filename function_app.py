@@ -5,6 +5,7 @@ import requests
 import aiohttp
 from aiohttp import BasicAuth
 import asyncio
+import nest_asyncio
 import os
 from io import BytesIO
 from stream_unzip import stream_unzip
@@ -139,7 +140,7 @@ async def yellow_taxi_pull(myTimer: func.TimerRequest) -> None:
 
     location = 'https://oecapstorage.blob.core.windows.net'
     filename = 'yellow_taxi/trips_2014_{}.csv'
-
+    nest_asyncio.apply()
     while True:
         loop = asyncio.get_event_loop()
 
@@ -161,7 +162,6 @@ async def yellow_taxi_pull(myTimer: func.TimerRequest) -> None:
             blob.upload_blob(content,
                              overwrite=True)
             i += 1
-        
 
         last_res = finished[-1]
 
