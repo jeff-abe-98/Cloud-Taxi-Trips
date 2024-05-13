@@ -190,6 +190,6 @@ async def taxi_trip_api_call(resource,
                                   url=url,
                                   auth=auth
                                   ) as resp:
-            return func.HttpResponse(await resp)
+            return await resp
 
     return func.HttpResponse(body='NotFound', status_code=404)
