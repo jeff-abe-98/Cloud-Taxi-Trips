@@ -145,9 +145,11 @@ async def yellow_taxi_pull(myTimer: func.TimerRequest) -> None:
         loop = asyncio.get_event_loop()
 
         tasks = [
+            asyncio.create_task(
                 taxi_trip_api_call('gkne-dk5s',
                                    offset=offset+limit*n,
                                    limit=limit) for n in range(0, 10)
+            )
         ]
         offset += limit*10
         finished, _ = loop.run_until_complete(asyncio.wait(tasks,
