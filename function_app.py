@@ -214,15 +214,15 @@ async def taxi_trip_api_call(resource,
     row_ct = int(row_res[1].decode('utf-8').replace('"', ''))
     logging.info(f'Resource has {row_ct} rows')
     tasks = []
-    async with aiohttp.ClientSession() as client:
-        for _ in range((row_ct//limit) + 1):
-            tasks.append(
-                        client.request(
-                                       method='get',
-                                       url=url,
-                                       auth=auth
-                                       )
-                            )
+    client = aiohttp.ClientSession()
+    for _ in range((row_ct//limit) + 1):
+        tasks.append(
+                    client.request(
+                                    method='get',
+                                    url=url,
+                                    auth=auth
+                                    )
+                        )
     finished = asyncio.gather(*tasks)
 
     return await finished
