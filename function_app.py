@@ -137,7 +137,7 @@ def green_taxi_pull(myTimer: func.TimerRequest) -> None:
     location = 'https://oecapstorage.blob.core.windows.net'
     filename = 'taxi/green_taxi/trips_2014_pt{}.csv'
 
-    results = taxi_trip_api_call('2np7-5jsg', 50000)
+    results = asyncio.run(taxi_trip_api_call('2np7-5jsg', 50000))
 
     for ind, res in enumerate(results):
         blob = BlobClient(account_url=location,
@@ -164,7 +164,7 @@ async def yellow_taxi_pull(myTimer: func.TimerRequest) -> None:
 
     location = 'https://oecapstorage.blob.core.windows.net'
     filename = 'yellow_taxi/trips_2014_{}.csv'
-    
+
     while True:
         loop = asyncio.get_event_loop()
 
@@ -211,19 +211,16 @@ async def taxi_trip_api_call(resource,
 
     row_ct = next(count_rsp.iter_lines())
     logging.info(f'Resource has {row_ct} rows')
-    loop = asyncio.get_event_loop()
     tasks = []
     for _ in range((row_ct//limit) + 1):
         async with aiohttp.ClientSession() as client:
-            tasks.append(asyncio.create_task(
-                                             await client.request(
-                                                            method='get',
-                                                            url=url,
-                                                            auth=auth
-                                                            )
-
-                                             )
+            tasks.append(
+                         client.request(
+                                        method='get',
+                                        url=url,
+                                        auth=auth
+                                        )
                          )
-    finished, _ = loop.run_until_complete(asyncio.wait(tasks,
-                                                   return_when=asyncio.ALL_COMPLETED)) # noqa
-    return finished
+    finished = asyncio.gather(*tasks)
+
+    return await finished
