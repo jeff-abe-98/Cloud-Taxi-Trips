@@ -216,7 +216,7 @@ async def taxi_trip_api_call(resource,
     for _ in range((row_ct//limit) + 1):
         async with aiohttp.ClientSession() as client:
             tasks.append(asyncio.create_task(
-                                                client.request(
+                                             await client.request(
                                                             method='get',
                                                             url=url,
                                                             auth=auth
