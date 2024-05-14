@@ -200,6 +200,8 @@ async def taxi_trip_api_call(resource,
                              limit):
     logging.info('Grabbing secrets')
 
+    loop = asyncio.get_event_loop()
+
     api_key = os.environ['api_key_id']
     api_secret = os.environ['api_key_secret']
 
@@ -223,6 +225,6 @@ async def taxi_trip_api_call(resource,
                                         auth=auth
                                         )
                          )
-    finished = asyncio.gather(*tasks)
+    finished = loop.run_until_complete(*tasks)
 
     return await finished
