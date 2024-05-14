@@ -137,7 +137,11 @@ def green_taxi_pull(myTimer: func.TimerRequest) -> None:
     location = 'https://oecapstorage.blob.core.windows.net'
     filename = 'taxi/green_taxi/trips_2014_pt{}.csv'
     with aiohttp.ClientSession() as client:
-        results = asyncio.run(taxi_trip_api_call('2np7-5jsg', 50000, client))
+        try:
+            results = asyncio.run(taxi_trip_api_call('2np7-5jsg', 50000, client))
+        except RuntimeError:
+            loop = asyncio.get_event_loop()
+            results = loop.run_until_complete(taxi_trip_api_call('2np7-5jsg', 50000, client))
 
     for ind, res in enumerate(results):
         blob = BlobClient(account_url=location,
