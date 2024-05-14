@@ -210,7 +210,8 @@ async def taxi_trip_api_call(resource,
     url = base_url + '?$offset={offset}&$limit={limit}'
     count_rsp = requests.get(count_url)
 
-    row_ct = int(next(next(count_rsp.iter_lines())).decode('utf-8'))
+    row_res = [*count_rsp.iter_lines()]
+    row_ct = int(row_res[1].decode('utf-8'))
     logging.info(f'Resource has {row_ct} rows')
     tasks = []
     for _ in range((row_ct//limit) + 1):
