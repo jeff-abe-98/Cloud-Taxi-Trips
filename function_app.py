@@ -202,6 +202,9 @@ async def taxi_trip_api_call(resource,
 
     api_key = os.environ['api_key_id']
     api_secret = os.environ['api_key_secret']
+
+    logging.info(api_key)
+
     auth = BasicAuth(api_key, api_secret)
 
     base_url = f'https://data.cityofnewyork.us/resource/{resource}.csv' # noqa
