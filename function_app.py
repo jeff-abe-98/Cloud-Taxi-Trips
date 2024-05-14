@@ -145,7 +145,7 @@ def green_taxi_pull(myTimer: func.TimerRequest) -> None:
                           blob_name=filename.format(ind),
                           credential=storage_token)
 
-        content = res.result().content.decode('utf-8')
+        content = res.content.decode('utf-8')
         blob.upload_blob(content,
                          overwrite=True)
 
