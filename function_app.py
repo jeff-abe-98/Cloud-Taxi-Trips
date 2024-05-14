@@ -5,7 +5,6 @@ import requests
 import aiohttp
 from aiohttp import BasicAuth
 import asyncio
-import nest_asyncio
 import os
 from io import BytesIO
 from stream_unzip import stream_unzip
@@ -85,49 +84,74 @@ def bike_pull(myTimer: func.TimerRequest) -> None:
     logging.info('Python timer trigger function executed.')
 
 
-@app.schedule(schedule="0 0 0 1 1 *", arg_name="myTimer",
-              run_on_startup=False, use_monitor=False)
-def green_taxi_pull(myTimer: func.TimerRequest) -> None:
-    if myTimer.past_due:
-        logging.info('Process Started')
-    logging.info('Grabbing secrets')
+# @app.schedule(schedule="0 0 0 1 1 *", arg_name="myTimer",
+#               run_on_startup=False, use_monitor=False)
+# def green_taxi_pull(myTimer: func.TimerRequest) -> None:
+#     if myTimer.past_due:
+#         logging.info('Process Started')
+#     logging.info('Grabbing secrets')
 
-    api_key = os.environ['api_key_id']
-    api_secret = os.environ['api_key_secret']
-    storage_token = os.environ['blob_storage_token']
+#     api_key = os.environ['api_key_id']
+#     api_secret = os.environ['api_key_secret']
+#     storage_token = os.environ['blob_storage_token']
 
-    base_url = 'https://data.cityofnewyork.us/resource/2np7-5jsg.csv'
+#     base_url = 'https://data.cityofnewyork.us/resource/2np7-5jsg.csv'
 
-    auth = HTTPBasicAuth(api_key, api_secret)
+#     auth = HTTPBasicAuth(api_key, api_secret)
 
-    offset = 0
-    limit = 50000
-    url = base_url+'?$offset={offset}&$limit={limit}'
-    n = 0
-    while True:
-        rsp = requests.request(method='get',
-                               url=url.format(offset=offset+limit*n,
-                                              limit=limit),
-                               auth=auth)
-        n += 1
-        resultset = [*rsp.iter_lines()]
-        if not rsp.ok or len(resultset) <= 1:
-            break
+#     offset = 0
+#     limit = 50000
+#     url = base_url+'?$offset={offset}&$limit={limit}'
+#     n = 0
+#     while True:
+#         rsp = requests.request(method='get',
+#                                url=url.format(offset=offset+limit*n,
+#                                               limit=limit),
+#                                auth=auth)
+#         n += 1
+#         resultset = [*rsp.iter_lines()]
+#         if not rsp.ok or len(resultset) <= 1:
+#             break
 
-        location = 'https://oecapstorage.blob.core.windows.net'
-        filename = f'green_taxi/trips_2014_{n}.csv'
-        blob = BlobClient(account_url=location,
-                          container_name=r'raw',
-                          blob_name=filename,
-                          credential=storage_token)
-        logging.info(f'Writing csv file in /raw/{filename}')
-        blob.upload_blob(rsp.content.decode('utf-8'), overwrite=True)
+#         location = 'https://oecapstorage.blob.core.windows.net'
+#         filename = f'green_taxi/trips_2014_{n}.csv'
+#         blob = BlobClient(account_url=location,
+#                           container_name=r'raw',
+#                           blob_name=filename,
+#                           credential=storage_token)
+#         logging.info(f'Writing csv file in /raw/{filename}')
+#         blob.upload_blob(rsp.content.decode('utf-8'), overwrite=True)
 
-    logging.info('Starting process')
+#     logging.info('Starting process')
 
 
 @app.schedule(schedule="0 0 0 1 1 *", arg_name="myTimer",
               run_on_startup=True, use_monitor=False)
+def green_taxi_pull(myTimer: func.TimerRequest) -> None:
+    if myTimer.past_due:
+        logging.info('Process Started')
+
+    logging.info('Grabbing secrets')
+    storage_token = os.environ['blob_storage_token']
+
+    location = 'https://oecapstorage.blob.core.windows.net'
+    filename = 'taxi/green_taxi/trips_2014_pt{}.csv'
+
+    results = taxi_trip_api_call('2np7-5jsg', 50000)
+
+    for ind, res in enumerate(results):
+        blob = BlobClient(account_url=location,
+                          container_name=r'raw',
+                          blob_name=filename.format(ind),
+                          credential=storage_token)
+
+        content = res.result().content.decode('utf-8')
+        blob.upload_blob(content,
+                         overwrite=True)
+
+
+@app.schedule(schedule="0 0 0 1 1 *", arg_name="myTimer",
+              run_on_startup=False, use_monitor=False)
 async def yellow_taxi_pull(myTimer: func.TimerRequest) -> None:
     if myTimer.past_due:
         logging.info('Process Started')
@@ -140,7 +164,7 @@ async def yellow_taxi_pull(myTimer: func.TimerRequest) -> None:
 
     location = 'https://oecapstorage.blob.core.windows.net'
     filename = 'yellow_taxi/trips_2014_{}.csv'
-    nest_asyncio.apply()
+    
     while True:
         loop = asyncio.get_event_loop()
 
@@ -173,23 +197,33 @@ async def yellow_taxi_pull(myTimer: func.TimerRequest) -> None:
 
 
 async def taxi_trip_api_call(resource,
-                             offset,
                              limit):
-
     logging.info('Grabbing secrets')
 
     api_key = os.environ['api_key_id']
     api_secret = os.environ['api_key_secret']
     auth = BasicAuth(api_key, api_secret)
 
-    url = f'https://data.cityofnewyork.us/resource/{resource}.csv?$offset={offset}&$limit={limit}' # noqa
+    base_url = f'https://data.cityofnewyork.us/resource/{resource}.csv' # noqa
+    count_url = base_url + '?$select=count(*)'
+    url = base_url + '?$offset={offset}&$limit={limit}'
+    count_rsp = requests.get(count_url)
 
-    async with aiohttp.ClientSession() as client:
-        async with client.request(
-                                  method='get',
-                                  url=url,
-                                  auth=auth
-                                  ) as resp:
-            return await resp
+    row_ct = next(count_rsp.iter_lines())
+    logging.info(f'Resource has {row_ct} rows')
+    loop = asyncio.get_event_loop()
+    tasks = []
+    for _ in range((row_ct//limit) + 1):
+        async with aiohttp.ClientSession() as client:
+            tasks.append(asyncio.create_task(
+                                                client.request(
+                                                            method='get',
+                                                            url=url,
+                                                            auth=auth
+                                                            )
 
-    return func.HttpResponse(body='NotFound', status_code=404)
+                                             )
+                         )
+    finished, _ = loop.run_until_complete(asyncio.wait(tasks,
+                                                   return_when=asyncio.ALL_COMPLETED)) # noqa
+    return finished
