@@ -136,8 +136,8 @@ def green_taxi_pull(myTimer: func.TimerRequest) -> None:
 
     location = 'https://oecapstorage.blob.core.windows.net'
     filename = 'taxi/green_taxi/trips_2014_pt{}.csv'
-
-    results = asyncio.run(taxi_trip_api_call('2np7-5jsg', 50000))
+    with aiohttp.ClientSession() as client:
+        results = asyncio.run(taxi_trip_api_call('2np7-5jsg', 50000, client))
 
     for ind, res in enumerate(results):
         blob = BlobClient(account_url=location,
@@ -197,7 +197,8 @@ async def yellow_taxi_pull(myTimer: func.TimerRequest) -> None:
 
 
 async def taxi_trip_api_call(resource,
-                             limit):
+                             limit,
+                             client):
     logging.info('Grabbing secrets')
 
     api_key = os.environ['api_key_id']
@@ -214,7 +215,6 @@ async def taxi_trip_api_call(resource,
     row_ct = int(row_res[1].decode('utf-8').replace('"', ''))
     logging.info(f'Resource has {row_ct} rows')
     tasks = []
-    client = aiohttp.ClientSession()
     for _ in range((row_ct//limit) + 1):
         tasks.append(
                     client.request(
