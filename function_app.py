@@ -144,9 +144,10 @@ async def green_taxi_pull(myTimer: func.TimerRequest) -> None:
         #                                                          50000,
         #                                                          client))
         # except RuntimeError:
-        results = asyncio.run(taxi_trip_api_call('2np7-5jsg',
-                                                 50000,
-                                                 client))
+        loop = asyncio.new_event_loop()
+        results = loop.run_until_complete(taxi_trip_api_call('2np7-5jsg',
+                                                             50000,
+                                                             client))
     for ind, res in enumerate(results):
         blob = BlobClient(account_url=location,
                           container_name=r'raw',
