@@ -243,7 +243,7 @@ async def fetch_data(session, url):
         if response.status != 200:
             logging.error(f"Failed to fetch data: {response.status}")
             return []
-        return await response.content.decode('utf-8')
+        return await response.content.read()
 
 
 async def fetch_all_data(base_url, rowcount, limit=50000):
