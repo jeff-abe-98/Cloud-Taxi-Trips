@@ -127,7 +127,7 @@ def bike_pull(myTimer: func.TimerRequest) -> None:
 
 @app.schedule(schedule="0 0 0 1 1 *", arg_name="myTimer",
               run_on_startup=True, use_monitor=False)
-def green_taxi_pull(myTimer: func.TimerRequest) -> None:
+async def green_taxi_pull(myTimer: func.TimerRequest) -> None:
     if myTimer.past_due:
         logging.info('Process Started')
 
@@ -136,19 +136,19 @@ def green_taxi_pull(myTimer: func.TimerRequest) -> None:
 
     location = 'https://oecapstorage.blob.core.windows.net'
     filename = 'taxi/green_taxi/trips_2014_pt{}.csv'
-    client = aiohttp.ClientSession()
-        # try:
-        #     loop = asyncio.new_event_loop()
-        #     asyncio.set_event_loop(loop)
-        #     results = loop.run_until_complete(taxi_trip_api_call('2np7-5jsg',
-        #                                                          50000,
-        #                                                          client))
-        # except RuntimeError:
-    results = asyncio.run(taxi_trip_api_call('2np7-5jsg',
-                                             50000,
-                                             client))
-    
-    client.close()
+
+    base_url = 'https://data.cityofnewyork.us/resource/2np7-5jsg.csv'
+
+    count_url = base_url + '?$select=count(*)'
+    url = base_url + '?$offset={offset}&$limit={limit}'
+    count_rsp = requests.get(count_url)
+
+    row_res = [*count_rsp.iter_lines()]
+    row_ct = int(row_res[1].decode('utf-8').replace('"', ''))
+    logging.info(f'Resource has {row_ct} rows')
+
+    results = await fetch_all_data(url, row_ct)
+
     for ind, res in enumerate(results):
         blob = BlobClient(account_url=location,
                           container_name=r'raw',
@@ -236,3 +236,22 @@ async def taxi_trip_api_call(resource,
     finished = asyncio.gather(*tasks)
 
     return await finished
+
+
+async def fetch_data(session, url):
+    async with session.get(url) as response:
+        if response.status != 200:
+            logging.error(f"Failed to fetch data: {response.status}")
+            return []
+        return await response.content.decode('utf-8')
+
+
+async def fetch_all_data(base_url, rowcount, limit=50000):
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+        for offset in range(0, rowcount, limit):
+            url = base_url.format(offset, limit)
+            tasks.append(fetch_data(session, url))
+        results = await asyncio.gather(*tasks)
+        # Flatten the list of lists
+        return results
