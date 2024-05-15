@@ -154,8 +154,9 @@ async def green_taxi_pull(myTimer: func.TimerRequest) -> None:
                           container_name=r'raw',
                           blob_name=filename.format(ind),
                           credential=storage_token)
-
-        blob.upload_blob(res,
+        
+        content = res.decode('utf-8')
+        blob.upload_blob(content,
                          overwrite=True)
 
 
@@ -244,7 +245,7 @@ async def fetch_data(session, url):
         except Exception:
             logging.error(f"Failed to fetch data: {response.status}")
             return []
-        return await response.content.read().decode('utf-8')
+        return await response.content.read()
 
 
 async def fetch_all_data(base_url, rowcount, limit=50000):
