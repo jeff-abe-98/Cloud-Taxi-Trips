@@ -154,7 +154,7 @@ async def green_taxi_pull(myTimer: func.TimerRequest) -> None:
                           container_name=r'raw',
                           blob_name=filename.format(ind),
                           credential=storage_token)
-        
+
         content = res.decode('utf-8')
         blob.upload_blob(content,
                          overwrite=True)
@@ -252,6 +252,7 @@ async def fetch_all_data(base_url, rowcount, limit=50000):
     async with aiohttp.ClientSession() as session:
         tasks = []
         for offset in range(0, rowcount, limit):
+            await asyncio.sleep(1/10)
             url = base_url.format(offset=offset, limit=limit)
             tasks.append(fetch_data(session, url))
         results = await asyncio.gather(*tasks)
