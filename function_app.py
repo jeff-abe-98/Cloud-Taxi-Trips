@@ -250,7 +250,7 @@ async def fetch_all_data(base_url, rowcount, limit=50000):
     async with aiohttp.ClientSession() as session:
         tasks = []
         for offset in range(0, rowcount, limit):
-            url = base_url.format(offset, limit)
+            url = base_url.format(offset=offset, limit=limit)
             tasks.append(fetch_data(session, url))
         results = await asyncio.gather(*tasks)
         # Flatten the list of lists
