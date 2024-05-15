@@ -242,7 +242,7 @@ async def fetch_data(session, url):
     async with session.get(url) as response:
         try:
             response.raise_for_status()
-        except:
+        except Exception:
             logging.error(f"Failed to fetch data: {response.status}")
             return []
         return await response.content.read().decode('utf-8')
