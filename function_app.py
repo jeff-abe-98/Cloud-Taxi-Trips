@@ -127,7 +127,7 @@ def bike_pull(myTimer: func.TimerRequest) -> None:
 
 @app.schedule(schedule="0 0 0 1 1 *", arg_name="myTimer",
               run_on_startup=True, use_monitor=False)
-async def green_taxi_pull(myTimer: func.TimerRequest) -> None:
+def green_taxi_pull(myTimer: func.TimerRequest) -> None:
     if myTimer.past_due:
         logging.info('Process Started')
 
@@ -136,7 +136,7 @@ async def green_taxi_pull(myTimer: func.TimerRequest) -> None:
 
     location = 'https://oecapstorage.blob.core.windows.net'
     filename = 'taxi/green_taxi/trips_2014_pt{}.csv'
-    async with aiohttp.ClientSession() as client:
+    client = aiohttp.ClientSession()
         # try:
         #     loop = asyncio.new_event_loop()
         #     asyncio.set_event_loop(loop)
@@ -144,10 +144,11 @@ async def green_taxi_pull(myTimer: func.TimerRequest) -> None:
         #                                                          50000,
         #                                                          client))
         # except RuntimeError:
-        loop = asyncio.new_event_loop()
-        results = loop.run_until_complete(taxi_trip_api_call('2np7-5jsg',
-                                                             50000,
-                                                             client))
+    results = asyncio.run(taxi_trip_api_call('2np7-5jsg',
+                                             50000,
+                                             client))
+    
+    client.close()
     for ind, res in enumerate(results):
         blob = BlobClient(account_url=location,
                           container_name=r'raw',
